@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const C = {
   sidebar: "#0F172A", sidebarHover: "#1E293B", sidebarActive: "#0D9488",
   primary: "#0D9488", primaryDark: "#0F766E", primaryLight: "#CCFBF1",
@@ -322,7 +324,7 @@ function Products({ products, setProducts }) {
   const handleAdd = async (form) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/admin/products", {
+      const res = await fetch(`${API}/api/admin/products`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
@@ -345,7 +347,7 @@ function Products({ products, setProducts }) {
   const handleEdit = async (form) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${editProduct.id}`, {
+      const res = await fetch(`${API}/api/admin/products/${editProduct.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
@@ -366,7 +368,7 @@ function Products({ products, setProducts }) {
   const handleDelete = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${deleteProduct.id}`, {
+      const res = await fetch(`${API}/api/admin/products/${deleteProduct.id}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -385,7 +387,7 @@ function Products({ products, setProducts }) {
     const newStatus = product.status === "active" ? "inactive" : "active";
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
+      const res = await fetch(`${API}/api/admin/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ isActive: newStatus === "active" })
@@ -517,7 +519,7 @@ function Orders({ orders, setOrders }) {
   const updateStatus = async (id, status) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/orders/${id}`, {
+      const res = await fetch(`${API}/api/admin/orders/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ status: status.toUpperCase() })
@@ -657,7 +659,7 @@ function Inventory({ products, setProducts }) {
     if (isNaN(val) || val < 0) return;
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${editStock.id}`, {
+      const res = await fetch(`${API}/api/admin/products/${editStock.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ stock: val, inStock: val > 0 })
@@ -767,7 +769,7 @@ export default function Admin() {
     const token = localStorage.getItem("token");
     if (!token) return;
     
-    fetch("http://localhost:5000/api/products?limit=1000")
+    fetch(`${API}/api/products?limit=1000`)
       .then(res => res.json())
       .then(data => {
         setProducts((data.products || []).map(p => ({
@@ -780,7 +782,7 @@ export default function Admin() {
       })
       .catch(console.error);
 
-    fetch("http://localhost:5000/api/admin/orders", {
+    fetch(`${API}/api/admin/orders`, {
       headers: { "Authorization": `Bearer ${token}` }
     })
       .then(res => res.json())

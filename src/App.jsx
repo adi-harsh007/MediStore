@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { GoogleLogin } from '@react-oauth/google';
 import Admin from "./Admin.jsx";
 
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const COLORS = {
   primary: "#0D9488",
   primaryDark: "#0F766E",
@@ -278,7 +280,7 @@ function HomePage({ products, setPage, setSelectedProduct, onAddToCart, category
     try {
       const formData = new FormData();
       formData.append("prescription", rxFile);
-      const res = await fetch("http://localhost:5000/api/orders/upload", {
+      const res = await fetch(`${API}/api/orders/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -679,7 +681,7 @@ function CartPage({ cart, setCart, setPage, showToast }) {
 
     try {
       // Save address & phone to user profile
-      await fetch('http://localhost:5000/api/user/profile', {
+      await fetch(`${API}/api/user/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ phone: phone.trim(), address: address.trim() })
@@ -690,7 +692,7 @@ function CartPage({ cart, setCart, setPage, showToast }) {
       if (prescriptionFile) {
         const formData = new FormData();
         formData.append("prescription", prescriptionFile);
-        const uploadRes = await fetch("http://localhost:5000/api/orders/upload", {
+        const uploadRes = await fetch(`${API}/api/orders/upload`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}` },
           body: formData
@@ -701,7 +703,7 @@ function CartPage({ cart, setCart, setPage, showToast }) {
       }
 
       // Create order on backend
-      const orderRes = await fetch('http://localhost:5000/api/orders', {
+      const orderRes = await fetch(`${API}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
@@ -736,7 +738,7 @@ function CartPage({ cart, setCart, setPage, showToast }) {
           order_id: orderData.razorpayOrderId,
           prefill: { contact: phone.trim() },
           handler: async function (response) {
-            await fetch('http://localhost:5000/api/orders/verify', {
+            await fetch(`${API}/api/orders/verify`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify({
@@ -961,7 +963,7 @@ function AuthPage({ setPage, setUser }) {
   const handleGoogleSuccess = async (credentialResponse) => {
     setError(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/google-login", {
+      const res = await fetch(`${API}/api/auth/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken: credentialResponse.credential })
@@ -1001,7 +1003,7 @@ function AuthPage({ setPage, setUser }) {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
       const payload = isLogin ? { email, password } : { name, email, password };
       
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
+      const res = await fetch(`${API}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -1033,7 +1035,7 @@ function AuthPage({ setPage, setUser }) {
   const handleVerifyOTP = async () => {
     setOtpMsg(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/verify-email", {
+      const res = await fetch(`${API}/api/auth/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: verifyEmail, code: otpCode })
@@ -1056,7 +1058,7 @@ function AuthPage({ setPage, setUser }) {
   const handleResend = async () => {
     setOtpMsg("");
     try {
-      const res = await fetch("http://localhost:5000/api/auth/resend-code", {
+      const res = await fetch(`${API}/api/auth/resend-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: verifyEmail })
@@ -1200,7 +1202,7 @@ function ProfilePage({ setPage, user, setUser }) {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { setPage("auth"); return; }
-    fetch("http://localhost:5000/api/user/profile", {
+    fetch(`${API}/api/user/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -1215,7 +1217,7 @@ function ProfilePage({ setPage, user, setUser }) {
     setSaving(true); setMsg(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/user/profile", {
+      const res = await fetch(`${API}/api/user/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: profile.name, phone: profile.phone, address: profile.address })
@@ -1244,7 +1246,7 @@ function ProfilePage({ setPage, user, setUser }) {
     }
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/user/password", {
+      const res = await fetch(`${API}/api/user/password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ currentPassword: passwords.currentPassword, newPassword: passwords.newPassword })
@@ -1406,7 +1408,7 @@ function MyOrdersPage({ setPage }) {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { setPage("auth"); return; }
-    fetch("http://localhost:5000/api/orders/me", {
+    fetch(`${API}/api/orders/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -1599,7 +1601,7 @@ export default function App() {
   }, []);
 
   const fetchProducts = (pageNum = 1) => {
-    fetch(`http://localhost:5000/api/products?page=${pageNum}&limit=12`)
+    fetch(`${API}/api/products?page=${pageNum}&limit=12`)
       .then(res => res.json())
       .then(data => {
         const formatted = data.products.map(p => ({
@@ -1624,7 +1626,7 @@ export default function App() {
   };
 
   const fetchCategories = () => {
-    fetch("http://localhost:5000/api/products/categories")
+    fetch(`${API}/api/products/categories`)
       .then(res => res.json())
       .then(data => setCategoryData(data.categories || []))
       .catch(console.error);
@@ -1637,7 +1639,7 @@ export default function App() {
     const token = localStorage.getItem("token");
     if (token) {
       // Verify user with backend instead of trusting localStorage alone
-      fetch("http://localhost:5000/api/user/profile", {
+      fetch(`${API}/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(r => {

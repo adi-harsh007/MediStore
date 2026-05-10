@@ -3,18 +3,25 @@ const crypto = require("crypto");
 const prisma = require("../prismaClient");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const multer = require("multer");
-const path = require("path");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer({ storage: storage });
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "medistore-prescriptions",
+    allowed_formats: ["jpg", "jpeg", "png", "pdf", "webp"],
+    transformation: [{ width: 1200, crop: "limit" }],
+  },
+});
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -36,8 +43,8 @@ router.post("/upload", authMiddleware, upload.single("prescription"), (req, res)
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl });
+    // Cloudinary returns the full URL in req.file.path
+    res.json({ url: req.file.path });
   } catch (err) {
     console.error("Upload error:", err.message);
     res.status(500).json({ error: "Server error" });

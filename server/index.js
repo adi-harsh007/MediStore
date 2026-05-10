@@ -40,8 +40,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 
-// Serve uploaded prescriptions/images
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Prescription uploads served via Cloudinary CDN (no local storage needed)
 
 app.get("/", (req, res) => {
   res.send("MediStore API is running.");
