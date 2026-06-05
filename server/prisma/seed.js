@@ -3,10 +3,10 @@ const prisma = require('../prismaClient');
 const bcrypt = require('bcrypt');
 
 const PRODUCTS = [
-  { name: "Paracetamol 500mg", category: "Pain Relief", price: 45, originalPrice: 65, rating: 4.8, reviews: 2340, icon: "💊", color: "#FEF3C7", description: "Fast-acting pain reliever and fever reducer.", dosage: "1–2 tablets every 4–6 hours (max 8/day)", prescriptionRequired: false, inStock: true, manufacturer: "Sun Pharma" },
-  { name: "Vitamin C 1000mg", category: "Vitamins", price: 299, originalPrice: 399, rating: 4.9, reviews: 1876, icon: "🍊", color: "#FFF7ED", description: "High-strength Vitamin C for immune support.", dosage: "1 tablet daily after meals", prescriptionRequired: false, inStock: true, manufacturer: "HealthKart" },
-  { name: "Amoxicillin 500mg", category: "Antibiotics", price: 189, originalPrice: 240, rating: 4.6, reviews: 892, icon: "💉", color: "#EFF6FF", description: "Broad-spectrum antibiotic.", dosage: "1 capsule 3 times daily for 7 days", prescriptionRequired: true, inStock: true, manufacturer: "Cipla" },
-  { name: "Omeprazole 20mg", category: "Digestive", price: 125, originalPrice: 160, rating: 4.7, reviews: 1203, icon: "🫁", color: "#F0FDF4", description: "Proton pump inhibitor for acid reflux.", dosage: "1 capsule daily before breakfast", prescriptionRequired: false, inStock: true, manufacturer: "Dr. Reddy's" },
+  { name: "Paracetamol 500mg", category: "Pain Relief", price: 45, originalPrice: 65, icon: "💊", color: "#FEF3C7", description: "Fast-acting pain reliever and fever reducer.", dosage: "1–2 tablets every 4–6 hours (max 8/day)", prescriptionRequired: false, inStock: true, manufacturer: "Sun Pharma" },
+  { name: "Vitamin C 1000mg", category: "Vitamins", price: 299, originalPrice: 399, icon: "🍊", color: "#FFF7ED", description: "High-strength Vitamin C for immune support.", dosage: "1 tablet daily after meals", prescriptionRequired: false, inStock: true, manufacturer: "HealthKart" },
+  { name: "Amoxicillin 500mg", category: "Antibiotics", price: 189, originalPrice: 240, icon: "💉", color: "#EFF6FF", description: "Broad-spectrum antibiotic.", dosage: "1 capsule 3 times daily for 7 days", prescriptionRequired: true, inStock: true, manufacturer: "Cipla" },
+  { name: "Omeprazole 20mg", category: "Digestive", price: 125, originalPrice: 160, icon: "🫁", color: "#F0FDF4", description: "Proton pump inhibitor for acid reflux.", dosage: "1 capsule daily before breakfast", prescriptionRequired: false, inStock: true, manufacturer: "Dr. Reddy's" },
 ];
 
 

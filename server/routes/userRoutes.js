@@ -109,4 +109,86 @@ router.put("/password", authMiddleware, passwordLimiter, async (req, res) => {
   }
 });
 
+// GET user wishlist
+router.get("/wishlist", authMiddleware, async (req, res) => {
+  try {
+    const wishlists = await prisma.wishlist.findMany({
+      where: { userId: req.user.userId },
+      include: {
+        product: {
+          include: {
+            reviews: { select: { rating: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formattedWishlists = wishlists.map(w => {
+      const reviewCount = w.product.reviews.length;
+      const avgRating = reviewCount > 0 ? (w.product.reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount).toFixed(1) : 0;
+      const { reviews, ...restProduct } = w.product;
+      return {
+        ...w,
+        product: { ...restProduct, rating: Number(avgRating), reviews: reviewCount }
+      };
+    });
+
+    res.json(formattedWishlists);
+  } catch (err) {
+    console.error("Get wishlist error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST add to wishlist
+router.post("/wishlist", authMiddleware, async (req, res) => {
+  try {
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: "Product ID is required" });
+
+    // Check if already in wishlist
+    const existing = await prisma.wishlist.findUnique({
+      where: { userId_productId: { userId: req.user.userId, productId: parseInt(productId) } }
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: "Product is already in wishlist" });
+    }
+
+    const item = await prisma.wishlist.create({
+      data: {
+        userId: req.user.userId,
+        productId: parseInt(productId)
+      }
+    });
+
+    res.status(201).json(item);
+  } catch (err) {
+    console.error("Add wishlist error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// DELETE from wishlist
+router.delete("/wishlist/:productId", authMiddleware, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.productId);
+    
+    // Using deleteMany in case the unique constraint isn't perfect, but delete works too with compound key
+    await prisma.wishlist.delete({
+      where: { userId_productId: { userId: req.user.userId, productId } }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Remove wishlist error:", err.message);
+    // If it doesn't exist, prisma throws P2025
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: "Item not in wishlist" });
+    }
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;

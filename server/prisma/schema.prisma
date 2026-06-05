@@ -19,6 +19,8 @@ model User {
   codeExpiry       DateTime?
   role             Role      @default(USER)
   orders           Order[]
+  reviews          Review[]
+  wishlists        Wishlist[]
   createdAt        DateTime  @default(now())
 }
 
@@ -33,8 +35,6 @@ model Product {
   category             String
   price                Float
   originalPrice        Float
-  rating               Float       @default(0)
-  reviews              Int         @default(0)
   icon                 String
   color                String
   description          String      @db.Text
@@ -45,7 +45,31 @@ model Product {
   isActive             Boolean     @default(true)
   manufacturer         String
   orderItems           OrderItem[]
+  reviews              Review[]
+  wishlistedBy         Wishlist[]
   createdAt            DateTime    @default(now())
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int      // 1 to 5
+  comment     String   @db.Text
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   Int
+  createdAt   DateTime @default(now())
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
 }
 
 model Order {
