@@ -13,12 +13,39 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
+// Trust reverse proxy headers (required for express-rate-limit on Render/Vercel)
+app.set("trust proxy", 1);
+
 // Security headers (X-Frame-Options, CSP, HSTS, etc.)
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
-// Restrict CORS to frontend origin only
+// Restrict CORS to configured frontend origins (extract clean scheme+host+port)
+const normalizeOrigin = (url) => {
+  const trimmed = url.trim().replace(/\/+$/, "");
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed;
+  }
+};
+const configuredOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://localhost:4173",
+  ...configuredOrigins,
+]);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
   credentials: true
 }));
 
