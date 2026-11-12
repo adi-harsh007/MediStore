@@ -19,7 +19,7 @@ services:
     environment:
       - PORT=5000
       - FRONTEND_URL=http://localhost:5173
-      - DATABASE_URL=mysql://root:rootpassword@db:3306/medistore
+      - DATABASE_URL=postgresql://postgres:rootpassword@db:5432/medistore
       - JWT_SECRET=supersecretjwtkey_for_medistore
       # Add other environment variables as needed
     depends_on:
@@ -27,19 +27,21 @@ services:
         condition: service_healthy
 
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: medistore
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: medistore
     ports:
-      - "3307:3306"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d medistore"]
+      interval: 10s
+      timeout: 5s
       retries: 10
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
 
 volumes:
   db_data:

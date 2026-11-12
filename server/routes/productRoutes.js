@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
 
     const where = { isActive: true };
     if (search) {
-      where.name = { contains: search };
+      where.name = { contains: search, mode: "insensitive" };
     }
     if (category && category !== "All") {
       where.category = category;

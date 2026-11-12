@@ -1,5 +1,4 @@
 const express = require("express");
-const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
 const dotenv = require("dotenv");
@@ -15,7 +14,6 @@ if (!process.env.JWT_SECRET) {
 const app = express();
 
 // Security headers (X-Frame-Options, CSP, HSTS, etc.)
-// Disable CORP so frontend can load images from /uploads
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // Restrict CORS to frontend origin only
@@ -39,8 +37,6 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
-
-// Prescription uploads served via Cloudinary CDN (no local storage needed)
 
 app.get("/", (req, res) => {
   res.send("MediStore API is running.");
