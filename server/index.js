@@ -19,13 +19,13 @@ app.set("trust proxy", 1);
 // Security headers (X-Frame-Options, CSP, HSTS, etc.)
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
-// Restrict CORS to configured frontend origins (extract clean scheme+host+port)
+// Restrict CORS to configured frontend origins (strip quotes/slashes, extract scheme+host+port)
 const normalizeOrigin = (url) => {
-  const trimmed = url.trim().replace(/\/+$/, "");
+  const cleaned = url.trim().replace(/^["']+|["']+$/g, "").replace(/\/+$/, "");
   try {
-    return new URL(trimmed).origin;
+    return new URL(cleaned).origin;
   } catch {
-    return trimmed;
+    return cleaned;
   }
 };
 const configuredOrigins = (process.env.FRONTEND_URL || "")
@@ -36,6 +36,7 @@ const configuredOrigins = (process.env.FRONTEND_URL || "")
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://localhost:4173",
+  "https://medi-store-8eu3.vercel.app",
   ...configuredOrigins,
 ]);
 
