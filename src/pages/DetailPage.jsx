@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { s, COLORS, API } from '../utils/theme';
 import StarRating from '../components/StarRating';
+import MedicineArt from '../components/MedicineArt';
 
 export default function DetailPage({ product: initialProduct, setPage, cart, onAddToCart, user, showToast, wishlist, toggleWishlist }) {
   const [product, setProduct] = useState(initialProduct);
@@ -22,12 +23,14 @@ export default function DetailPage({ product: initialProduct, setPage, cart, onA
 
   if (!product) return null;
   const discount = Math.round((1 - product.price / product.originalPrice) * 100);
+  const isRx = Boolean(product.prescription || product.prescriptionRequired);
+  const isWishlisted = wishlist?.some(w => w.id === product.id);
 
   const submitReview = async (e) => {
     e.preventDefault();
     if (!user) return showToast("Please login to review", "error");
     setSubmitting(true);
-    
+
     try {
       const res = await fetch(`${API}/api/products/${product.id}/reviews`, {
         method: "POST",
@@ -37,19 +40,18 @@ export default function DetailPage({ product: initialProduct, setPage, cart, onA
         },
         body: JSON.stringify({ rating, comment })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit review");
-      
+
       showToast("Review submitted successfully!", "success");
       setComment("");
       setRating(5);
-      
+
       // Refresh product details
       const refreshRes = await fetch(`${API}/api/products/${product.id}`);
       const updatedProduct = await refreshRes.json();
       setProduct(updatedProduct);
-      
     } catch (err) {
       showToast(err.message, "error");
     } finally {
@@ -60,72 +62,104 @@ export default function DetailPage({ product: initialProduct, setPage, cart, onA
   return (
     <div style={s.page}>
       <button style={s.backBtn} onClick={() => setPage("listing")}>← Back to Medicines</button>
-      <div style={s.detailLayout}>
-        <div style={{ ...s.detailImgBox, background: product.color, position: "relative" }}>
+      <div className="ms-detail-grid">
+        <div style={{ ...s.detailImgBox, position: "relative" }}>
           <button
             style={{
-              position: "absolute", top: 14, right: 14, zIndex: 10,
-              cursor: "pointer", fontSize: 18, padding: 0,
-              background: "rgba(255,255,255,0.9)", borderRadius: 8,
+              position: "absolute", top: 16, right: 16, zIndex: 10,
+              cursor: "pointer", padding: 0,
+              background: isWishlisted ? "rgba(251, 113, 133, 0.2)" : "rgba(6, 24, 26, 0.82)",
+              borderRadius: 10,
               display: "flex", alignItems: "center", justifyContent: "center",
-              width: 40, height: 40,
-              color: wishlist?.some(w => w.id === product.id) ? COLORS.danger : COLORS.textLight,
-              border: `1px solid ${wishlist?.some(w => w.id === product.id) ? "#FECACA" : COLORS.border}`,
-              transition: "all 0.15s"
+              width: 42, height: 42,
+              color: isWishlisted ? COLORS.danger : COLORS.textMuted,
+              border: `1px solid ${isWishlisted ? "rgba(251, 113, 133, 0.45)" : COLORS.borderStrong}`,
+              transition: "all 0.15s", backdropFilter: "blur(8px)"
             }}
             onClick={(e) => { e.stopPropagation(); toggleWishlist?.(product); }}
+            title={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
           >
-            ♥
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={isWishlisted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
           </button>
-          <span style={{ fontSize: 80 }}>{product.icon}</span>
+          <MedicineArt category={product.category} name={product.name} variant="detail" />
         </div>
+
         <div>
-          {product.prescription && <div style={{ ...s.rxBadge, marginBottom: 10 }}>Prescription Required</div>}
+          {isRx && <div style={{ ...s.rxBadge, marginBottom: 10 }}>PRESCRIPTION REQUIRED (Rx)</div>}
           <div style={s.detailCat}>{product.category}</div>
           <h1 style={s.detailName}>{product.name}</h1>
+
           <div style={s.detailRating}>
-            <div style={s.detailRatingStars}><StarRating rating={product.rating} /></div>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>{product.rating}</span>
-            <span style={{ color: COLORS.textMuted, fontSize: 14 }}>({product.reviews.toLocaleString()} reviews)</span>
-            <span style={product.inStock ? s.inStockBadge : s.outStockBadge}>{product.inStock ? "In Stock" : "Out of Stock"}</span>
+            <div style={s.detailRatingStars}><StarRating rating={product.rating || 0} /></div>
+            <span style={{ fontWeight: 700, fontSize: 14, color: COLORS.text }}>{product.rating || 0}</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 13 }}>({(product.reviews || 0).toLocaleString()} reviews)</span>
+            <span style={product.inStock ? s.inStockBadge : s.outStockBadge}>
+              {product.inStock ? `In Stock${product.stock ? ` · ${product.stock} units` : ""}` : "Out of Stock"}
+            </span>
           </div>
+
           <div style={s.detailPriceRow}>
             <span style={s.detailPrice}>₹{product.price}</span>
             <span style={s.detailOrig}>₹{product.originalPrice}</span>
             <span style={s.detailBadge}>{discount}% off</span>
           </div>
+
           <p style={s.detailDesc}>{product.description}</p>
+
           <div style={s.tagRow}>
-            {(product.tags || [product.prescriptionRequired ? "Rx Only" : "OTC"]).map(t => <span key={t} style={s.tag}>{t}</span>)}
+            {(product.tags || [isRx ? "Rx Only" : "OTC"]).map(t => <span key={t} style={s.tag}>{t}</span>)}
           </div>
+
           <div style={s.detailInfoBox}>
-            {[["Dosage", product.dosage], ["Manufacturer", product.manufacturer], ["Category", product.category]].map(([label, val]) => (
+            {[
+              ["Dosage", product.dosage],
+              ["Manufacturer", product.manufacturer],
+              ["Department", product.category],
+              ["Availability", product.inStock ? `${product.stock ?? "Available"} units ready for dispatch` : "Currently out of stock"]
+            ].map(([label, val]) => (
               <div key={label} style={s.detailInfoRow}>
                 <span style={s.detailInfoLabel}>{label}</span>
                 <span style={s.detailInfoVal}>{val}</span>
               </div>
             ))}
           </div>
+
           <div style={s.qtyRow}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textMuted }}>Quantity</span>
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.textMuted }}>Quantity</span>
             <button style={s.qtyBtn} onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
             <span style={s.qtyNum}>{qty}</span>
             <button style={s.qtyBtn} onClick={() => setQty(q => q + 1)}>+</button>
           </div>
+
           <div style={{ display: "flex", gap: 12 }}>
-            <button style={{ ...s.addToCartBtn, opacity: product.inStock ? 1 : 0.5 }}
-              onClick={() => { if (product.inStock) { for (let i = 0; i < qty; i++) onAddToCart(product); } }}>
-              {inCart ? "✓ Added" : "Add to Cart"}
+            <button
+              className="ms-btn-primary"
+              style={{
+                ...s.addToCartBtn,
+                opacity: product.inStock ? 1 : 0.45,
+                cursor: product.inStock ? "pointer" : "not-allowed"
+              }}
+              onClick={() => { if (product.inStock) { for (let i = 0; i < qty; i++) onAddToCart(product); } }}
+            >
+              {inCart ? "✓ Added to Cart" : "Add to Cart"}
             </button>
-            <button style={{ ...s.buyNowBtn, opacity: product.inStock ? 1 : 0.5 }}
-              onClick={() => { if (product.inStock) { for (let i = 0; i < qty; i++) onAddToCart(product); setPage("cart"); } }}>
-              Buy Now
+            <button
+              style={{
+                ...s.buyNowBtn,
+                opacity: product.inStock ? 1 : 0.45,
+                cursor: product.inStock ? "pointer" : "not-allowed"
+              }}
+              onClick={() => { if (product.inStock) { for (let i = 0; i < qty; i++) onAddToCart(product); setPage("cart"); } }}
+            >
+              Buy Now →
             </button>
           </div>
         </div>
       </div>
-      
-      {/* ═══ Reviews Section — Premium Redesign ═══ */}
+
+      {/* Reviews Section */}
       {(() => {
         const reviews = product.reviewList || [];
         const totalReviews = reviews.length;
@@ -149,45 +183,48 @@ export default function DetailPage({ product: initialProduct, setPage, cart, onA
           return `${Math.floor(months / 12)}y ago`;
         };
 
-        const avatarColors = ["#0d9488", "#0891b2", "#2563eb", "#7c3aed", "#c026d3", "#db2777", "#dc2626", "#ea580c"];
+        const avatarColors = ["#14B8A6", "#0EA5E9", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981"];
         const getAvatarColor = (name) => avatarColors[name.charCodeAt(0) % avatarColors.length];
 
         const starBarColor = (star) => {
-          if (star >= 4) return "#22c55e";
-          if (star === 3) return "#f59e0b";
-          return "#ef4444";
+          if (star >= 4) return COLORS.success;
+          if (star === 3) return COLORS.warning;
+          return COLORS.danger;
         };
 
         return (
-          <div style={{ maxWidth: 960, margin: "36px auto" }}>
-            {/* Section Header */}
+          <div style={{ maxWidth: 980, margin: "44px auto 12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-              <div style={{ width: 3, height: 24, borderRadius: 2, background: COLORS.primary }} />
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Customer Reviews</h2>
-              <span style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 500, background: "#f1f5f9", padding: "3px 10px", borderRadius: 4 }}>{totalReviews} review{totalReviews !== 1 ? "s" : ""}</span>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: COLORS.primary }} />
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: 0 }}>Customer Reviews</h2>
+              <span style={{
+                fontSize: 12, color: COLORS.primary, fontWeight: 700,
+                background: COLORS.primaryLight, border: `1px solid ${COLORS.border}`,
+                padding: "3px 10px", borderRadius: 6, fontFamily: "'JetBrains Mono', monospace"
+              }}>
+                {totalReviews} review{totalReviews !== 1 ? "s" : ""}
+              </span>
             </div>
 
-            {/* Rating Summary + Write Review — Side by Side */}
             <div style={{ display: "grid", gridTemplateColumns: totalReviews > 0 ? "320px 1fr" : "1fr", gap: 20, marginBottom: 28 }}>
-
-              {/* Left: Rating Summary Card */}
               {totalReviews > 0 && (
-                <div style={{ background: COLORS.white, borderRadius: 10, padding: 24, border: `1px solid ${COLORS.border}`, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ fontSize: 44, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{avgRating.toFixed(1)}</div>
-                  <div style={{ display: "flex", gap: 3, margin: "8px 0 6px" }}>
-                    {[1,2,3,4,5].map(i => (
-                      <span key={i} style={{ fontSize: 16, color: i <= Math.round(avgRating) ? "#f59e0b" : "#d1d5db" }}>★</span>
+                <div style={{ background: COLORS.surface, borderRadius: 14, padding: 24, border: `1px solid ${COLORS.border}`, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 46, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{avgRating.toFixed(1)}</div>
+                  <div style={{ display: "flex", gap: 3, margin: "10px 0 6px" }}>
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <span key={i} style={{ fontSize: 16, color: i <= Math.round(avgRating) ? COLORS.warning : "#22494E" }}>★</span>
                     ))}
                   </div>
-                  <div style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 500, marginBottom: 18 }}>Based on {totalReviews} review{totalReviews !== 1 ? "s" : ""}</div>
-                  
-                  {/* Distribution Bars */}
-                  <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 500, marginBottom: 18 }}>
+                    Based on {totalReviews} verified review{totalReviews !== 1 ? "s" : ""}
+                  </div>
+
+                  <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 7 }}>
                     {distribution.map(d => (
                       <div key={d.star} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, width: 14, textAlign: "right" }}>{d.star}</span>
-                        <span style={{ fontSize: 11, color: "#d1d5db" }}>★</span>
-                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#f1f5f9", overflow: "hidden" }}>
+                        <span style={{ fontSize: 11, color: COLORS.warning }}>★</span>
+                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: COLORS.inputBg, overflow: "hidden" }}>
                           <div style={{ width: `${d.pct}%`, height: "100%", borderRadius: 3, background: starBarColor(d.star), transition: "width 0.5s ease" }} />
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.textMuted, width: 24, textAlign: "right" }}>{d.count}</span>
@@ -197,116 +234,90 @@ export default function DetailPage({ product: initialProduct, setPage, cart, onA
                 </div>
               )}
 
-              {/* Right: Write a Review */}
-              <div style={{ background: COLORS.white, borderRadius: 10, padding: 24, border: `1px solid ${COLORS.border}` }}>
+              <div style={{ background: COLORS.surface, borderRadius: 14, padding: 24, border: `1px solid ${COLORS.border}` }}>
                 {user ? (
                   <form onSubmit={submitReview}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: getAvatarColor(user.name), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: getAvatarColor(user.name), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700 }}>
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: COLORS.text }}>Write a Review</div>
-                        <div style={{ fontSize: 12, color: COLORS.textMuted }}>Share your experience</div>
+                        <div style={{ fontWeight: 700, fontSize: 14.5, color: COLORS.text }}>Write a Clinical Review</div>
+                        <div style={{ fontSize: 12, color: COLORS.textMuted }}>Available to verified buyers of this formulation</div>
                       </div>
                     </div>
 
-                    {/* Interactive Star Picker */}
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.textMuted, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Your Rating</div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {[1,2,3,4,5].map(i => (
+                    <div style={{ marginBottom: 18 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.textMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Rating</div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {[1, 2, 3, 4, 5].map(i => (
                           <span
                             key={i}
                             onClick={() => setRating(i)}
                             style={{
-                              fontSize: 24,
-                              cursor: "pointer",
-                              color: i <= rating ? "#f59e0b" : "#e5e7eb",
+                              fontSize: 24, cursor: "pointer",
+                              color: i <= rating ? COLORS.warning : "#22494E",
                               transition: "transform 0.15s, color 0.15s",
-                              display: "inline-block",
-                              userSelect: "none"
+                              display: "inline-block", userSelect: "none"
                             }}
-                            onMouseEnter={(e) => e.target.style.transform = "scale(1.15)"}
-                            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
                           >★</span>
                         ))}
-                        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginLeft: 8, alignSelf: "center" }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.primary, marginLeft: 8 }}>
                           {["", "Poor", "Fair", "Good", "Great", "Excellent"][rating]}
                         </span>
                       </div>
                     </div>
 
-                    {/* Comment */}
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.textMuted, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Your Review</div>
+                    <div style={{ marginBottom: 18 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.textMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Review</div>
                       <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="What did you like or dislike? How did this product help you?"
+                        placeholder="Share effectiveness, tolerance, or delivery feedback..."
                         style={{
-                          width: "100%", padding: "12px 14px", borderRadius: 8,
-                          border: `1px solid ${COLORS.border}`, fontSize: 13, minHeight: 90,
+                          width: "100%", padding: "12px 14px", borderRadius: 10,
+                          border: `1px solid ${COLORS.border}`, background: COLORS.inputBg,
+                          color: COLORS.text, fontSize: 13.5, minHeight: 90,
                           fontFamily: "inherit", resize: "vertical", outline: "none",
-                          transition: "border-color 0.2s", boxSizing: "border-box",
-                          lineHeight: 1.6
+                          boxSizing: "border-box", lineHeight: 1.6
                         }}
-                        onFocus={(e) => { e.target.style.borderColor = COLORS.primary; }}
-                        onBlur={(e) => { e.target.style.borderColor = COLORS.border; }}
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={submitting}
+                      className="ms-btn-primary"
                       style={{
-                        background: submitting ? "#94a3b8" : COLORS.primary,
-                        color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px",
-                        fontSize: 13, fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer",
-                        transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6
+                        background: submitting ? COLORS.textLight : "linear-gradient(135deg, #2EE6C5 0%, #14B8A6 100%)",
+                        color: COLORS.primaryInk, border: "none", borderRadius: 9, padding: "11px 24px",
+                        fontSize: 13.5, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer",
+                        display: "inline-flex", alignItems: "center", gap: 8
                       }}
                     >
-                      {submitting ? (
-                        <><span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #fff4", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} /> Submitting...</>
-                      ) : (
-                        <>Submit Review</>
-                      )}
+                      {submitting ? "Submitting..." : "Submit Review"}
                     </button>
                   </form>
                 ) : (
-                  <div style={{ textAlign: "center", padding: "28px 20px" }}>
-                    <div style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>Share Your Experience</div>
-                    <p style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>Login to write a review and help other customers.</p>
-                    <button
-                      onClick={() => setPage("auth")}
-                      style={{
-                        background: COLORS.primary,
-                        color: "#fff", border: "none", borderRadius: 8, padding: "10px 28px",
-                        fontSize: 13, fontWeight: 600, cursor: "pointer"
-                      }}
-                    >Login to Review</button>
+                  <div style={{ textAlign: "center", padding: "24px 16px" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>Share Your Experience</div>
+                    <p style={{ color: COLORS.textMuted, fontSize: 13.5, marginBottom: 18, lineHeight: 1.6 }}>Sign in to leave a verified review and guide other patients.</p>
+                    <button className="ms-btn-primary" onClick={() => setPage("auth")} style={s.btnPrimary}>
+                      Sign In to Review
+                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Review Cards */}
             {totalReviews > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {reviews.map((r, idx) => (
-                  <div key={r.id} style={{
-                    background: COLORS.white, borderRadius: 10, padding: "18px 20px",
-                    border: `1px solid ${COLORS.border}`,
-                    transition: "box-shadow 0.2s"
-                  }}
-                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.05)"}
-                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = "none"}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {reviews.map(r => (
+                  <div key={r.id} style={{ background: COLORS.surface, borderRadius: 14, padding: "18px 20px", border: `1px solid ${COLORS.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        {/* Avatar */}
                         <div style={{
-                          width: 36, height: 36, borderRadius: 8,
+                          width: 36, height: 36, borderRadius: 9,
                           background: getAvatarColor(r.user.name),
                           color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 14, fontWeight: 700, flexShrink: 0
@@ -315,43 +326,41 @@ export default function DetailPage({ product: initialProduct, setPage, cart, onA
                         </div>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontWeight: 600, fontSize: 14, color: COLORS.text }}>{r.user.name}</span>
-                            <span style={{ fontSize: 10, fontWeight: 600, color: "#059669", background: "#f0fdf4", padding: "2px 6px", borderRadius: 4 }}>Verified</span>
+                            <span style={{ fontWeight: 700, fontSize: 14, color: COLORS.text }}>{r.user.name}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.success, background: COLORS.successBg, border: "1px solid rgba(52,211,153,0.25)", padding: "2px 7px", borderRadius: 5 }}>Verified Buyer</span>
                           </div>
-                          <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 1 }}>{timeAgo(r.createdAt)}</div>
+                          <div style={{ fontSize: 11.5, color: COLORS.textMuted, marginTop: 2 }}>{timeAgo(r.createdAt)}</div>
                         </div>
                       </div>
 
-                      {/* Star Badge */}
                       <div style={{
                         display: "flex", alignItems: "center", gap: 2,
-                        background: COLORS.bg,
-                        padding: "4px 10px", borderRadius: 6,
+                        background: COLORS.inputBg, padding: "4px 10px", borderRadius: 8,
                         border: `1px solid ${COLORS.border}`
                       }}>
-                        {[1,2,3,4,5].map(i => (
-                          <span key={i} style={{ fontSize: 12, color: i <= r.rating ? "#f59e0b" : "#d1d5db" }}>★</span>
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <span key={i} style={{ fontSize: 12, color: i <= r.rating ? COLORS.warning : "#22494E" }}>★</span>
                         ))}
                       </div>
                     </div>
 
                     {r.comment && (
-                      <p style={{
-                        fontSize: 13, color: "#475569", lineHeight: 1.6, margin: 0,
-                        paddingLeft: 48
-                      }}>{r.comment}</p>
+                      <p style={{ fontSize: 13.5, color: "#B8D4D2", lineHeight: 1.6, margin: 0, paddingLeft: 48 }}>
+                        {r.comment}
+                      </p>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
               <div style={{
-                textAlign: "center", padding: "48px 20px",
-                background: COLORS.bg,
-                borderRadius: 10, border: `1px dashed ${COLORS.border}`
+                textAlign: "center", padding: "44px 20px",
+                background: COLORS.surface, borderRadius: 14, border: `1px dashed ${COLORS.borderStrong}`
               }}>
-                <div style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>No Reviews Yet</div>
-                <p style={{ fontSize: 13, color: COLORS.textMuted, maxWidth: 380, margin: "0 auto" }}>Be the first to share your experience with this product.</p>
+                <div style={{ fontSize: 17, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>No Reviews Yet</div>
+                <p style={{ fontSize: 13.5, color: COLORS.textMuted, maxWidth: 380, margin: "0 auto" }}>
+                  Be the first verified buyer to review this formulation.
+                </p>
               </div>
             )}
           </div>

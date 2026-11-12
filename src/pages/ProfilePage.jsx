@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { s, COLORS, API } from '../utils/theme';
+import { COLORS, API } from '../utils/theme';
 
-export default function ProfilePage({ setPage, user, setUser }) {
+export default function ProfilePage({ setPage, setUser }) {
   const [profile, setProfile] = useState({ name: "", email: "", phone: "", address: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -18,7 +18,15 @@ export default function ProfilePage({ setPage, user, setUser }) {
     })
       .then(r => r.json())
       .then(data => {
-        setProfile({ name: data.name || "", email: data.email || "", phone: data.phone || "", address: data.address || "", createdAt: data.createdAt, orderCount: data._count?.orders || 0, role: data.role });
+        setProfile({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          address: data.address || "",
+          createdAt: data.createdAt,
+          orderCount: data._count?.orders || 0,
+          role: data.role
+        });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -35,7 +43,6 @@ export default function ProfilePage({ setPage, user, setUser }) {
       });
       if (!res.ok) throw new Error("Failed to update");
       const updated = await res.json();
-      // Update localStorage user
       const storedUser = JSON.parse(localStorage.getItem("user"));
       const newUser = { ...storedUser, name: updated.name };
       localStorage.setItem("user", JSON.stringify(newUser));
@@ -52,8 +59,8 @@ export default function ProfilePage({ setPage, user, setUser }) {
     if (passwords.newPassword !== passwords.confirmPassword) {
       setPwMsg({ type: "error", text: "New passwords don't match" }); return;
     }
-    if (passwords.newPassword.length < 6) {
-      setPwMsg({ type: "error", text: "Password must be at least 6 characters" }); return;
+    if (passwords.newPassword.length < 8) {
+      setPwMsg({ type: "error", text: "Password must be at least 8 characters" }); return;
     }
     try {
       const token = localStorage.getItem("token");
@@ -72,54 +79,80 @@ export default function ProfilePage({ setPage, user, setUser }) {
   };
 
   const ps = {
-    container: { maxWidth: 720, margin: "0 auto", padding: "2rem" },
-    header: { display: "flex", alignItems: "center", gap: 20, marginBottom: 32 },
-    avatarLg: { width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryDark})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800 },
-    tabs: { display: "flex", gap: 4, background: COLORS.bg, borderRadius: 12, padding: 4, marginBottom: 28 },
-    tab: (active) => ({ flex: 1, padding: "10px 16px", borderRadius: 10, border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", background: active ? COLORS.white : "transparent", color: active ? COLORS.text : COLORS.textMuted, boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none", transition: "all 0.2s" }),
-    card: { background: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: "24px", marginBottom: 20 },
-    cardTitle: { fontSize: 16, fontWeight: 700, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 },
-    fieldGroup: { marginBottom: 20 },
-    fieldLabel: { display: "block", fontSize: 13, fontWeight: 700, color: COLORS.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" },
-    fieldInput: { width: "100%", padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${COLORS.border}`, fontSize: 15, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s", background: COLORS.white },
-    fieldInputDisabled: { width: "100%", padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${COLORS.border}`, fontSize: 15, background: COLORS.bg, color: COLORS.textMuted, boxSizing: "border-box" },
-    textarea: { width: "100%", padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${COLORS.border}`, fontSize: 15, outline: "none", boxSizing: "border-box", minHeight: 80, resize: "vertical", fontFamily: "inherit" },
-    saveBtn: { background: COLORS.primary, color: "#fff", border: "none", borderRadius: 10, padding: "12px 28px", fontSize: 15, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.7 : 1 },
-    msg: (type) => ({ padding: "10px 16px", borderRadius: 10, fontSize: 14, fontWeight: 600, marginBottom: 16, background: type === "success" ? "#ECFDF5" : "#FEF2F2", color: type === "success" ? "#059669" : "#DC2626", border: `1px solid ${type === "success" ? "#A7F3D0" : "#FECACA"}` }),
-    statRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 4 },
-    statCard: { background: COLORS.bg, borderRadius: 12, padding: "16px", textAlign: "center" },
-    statNum: { fontSize: 22, fontWeight: 800, color: COLORS.primary, marginBottom: 2 },
+    container: { maxWidth: 740, margin: "0 auto", padding: "2rem" },
+    header: { display: "flex", alignItems: "center", gap: 20, marginBottom: 28 },
+    avatarLg: {
+      width: 72, height: 72, borderRadius: 18,
+      background: "linear-gradient(135deg, #2EE6C5 0%, #0EA5E9 100%)",
+      color: COLORS.primaryInk, display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 28, fontWeight: 800, boxShadow: "0 10px 28px rgba(46, 230, 197, 0.25)"
+    },
+    tabs: { display: "flex", gap: 6, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 5, marginBottom: 24 },
+    tab: (active) => ({
+      flex: 1, padding: "10px 16px", borderRadius: 9, border: "none", fontSize: 13.5, fontWeight: 700,
+      cursor: "pointer",
+      background: active ? COLORS.primaryLight : "transparent",
+      color: active ? COLORS.primary : COLORS.textMuted,
+      transition: "all 0.2s"
+    }),
+    card: { background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: "24px", marginBottom: 20 },
+    cardTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 17, fontWeight: 700, marginBottom: 20, color: COLORS.text },
+    fieldGroup: { marginBottom: 18 },
+    fieldLabel: { display: "block", fontSize: 11.5, fontWeight: 700, color: COLORS.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" },
+    fieldInput: { width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${COLORS.border}`, fontSize: 14.5, outline: "none", boxSizing: "border-box", background: COLORS.inputBg, color: COLORS.text },
+    fieldInputDisabled: { width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${COLORS.borderLight}`, fontSize: 14.5, background: "rgba(6, 24, 26, 0.55)", color: COLORS.textLight, boxSizing: "border-box" },
+    textarea: { width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${COLORS.border}`, fontSize: 14.5, outline: "none", boxSizing: "border-box", minHeight: 84, resize: "vertical", background: COLORS.inputBg, color: COLORS.text },
+    saveBtn: {
+      background: "linear-gradient(135deg, #2EE6C5 0%, #14B8A6 100%)",
+      color: COLORS.primaryInk, border: "none", borderRadius: 10, padding: "12px 28px",
+      fontSize: 14, fontWeight: 800, cursor: "pointer", opacity: saving ? 0.7 : 1
+    },
+    msg: (type) => ({
+      padding: "11px 16px", borderRadius: 10, fontSize: 13.5, fontWeight: 600, marginBottom: 16,
+      background: type === "success" ? COLORS.successBg : COLORS.dangerBg,
+      color: type === "success" ? COLORS.success : COLORS.danger,
+      border: `1px solid ${type === "success" ? "rgba(52,211,153,0.3)" : "rgba(251,113,133,0.3)"}`
+    }),
+    statRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 },
+    statCard: { background: COLORS.inputBg, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "18px 14px", textAlign: "center" },
+    statNum: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.primary, marginBottom: 4 },
     statLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: 600 },
   };
 
   if (loading) return (
     <div style={{ ...ps.container, textAlign: "center", paddingTop: 80 }}>
-      <div style={{ color: COLORS.textMuted, marginBottom: 16 }}>
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+      <div style={{ color: COLORS.primary, marginBottom: 14 }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
       </div>
-      <div style={{ fontSize: 16, color: COLORS.textMuted }}>Loading profile...</div>
+      <div style={{ fontSize: 15, color: COLORS.textMuted }}>Loading profile...</div>
     </div>
   );
 
   return (
     <div style={ps.container}>
-      {/* Header */}
       <div style={ps.header}>
         <div style={ps.avatarLg}>{profile.name?.charAt(0)?.toUpperCase() || "U"}</div>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 2 }}>{profile.name}</h1>
-          <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0 }}>{profile.email} {profile.role === "ADMIN" && <span style={{ background: COLORS.primary, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, marginLeft: 8 }}>ADMIN</span>}</p>
+          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, margin: "0 0 4px 0", color: COLORS.text }}>{profile.name}</h1>
+          <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0 }}>
+            {profile.email}
+            {profile.role === "ADMIN" && (
+              <span style={{
+                background: COLORS.primaryLight, color: COLORS.primary,
+                border: `1px solid ${COLORS.borderStrong}`, fontSize: 10, fontWeight: 700,
+                padding: "2px 8px", borderRadius: 6, marginLeft: 10, fontFamily: "'JetBrains Mono', monospace"
+              }}>ADMIN</span>
+            )}
+          </p>
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={ps.tabs}>
         <button style={ps.tab(activeTab === "profile")} onClick={() => setActiveTab("profile")}>Profile</button>
         <button style={ps.tab(activeTab === "security")} onClick={() => setActiveTab("security")}>Security</button>
         <button style={ps.tab(activeTab === "account")} onClick={() => setActiveTab("account")}>Account</button>
       </div>
 
-      {/* Profile Tab */}
       {activeTab === "profile" && (
         <>
           {msg && <div style={ps.msg(msg.type)}>{msg.type === "success" ? "✓ " : "✕ "}{msg.text}</div>}
@@ -132,7 +165,7 @@ export default function ProfilePage({ setPage, user, setUser }) {
             <div style={ps.fieldGroup}>
               <label style={ps.fieldLabel}>Email Address</label>
               <input style={ps.fieldInputDisabled} value={profile.email} disabled />
-              <span style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4, display: "block" }}>Email cannot be changed</span>
+              <span style={{ fontSize: 11.5, color: COLORS.textLight, marginTop: 5, display: "block" }}>Primary account email cannot be changed</span>
             </div>
             <div style={ps.fieldGroup}>
               <label style={ps.fieldLabel}>Phone Number</label>
@@ -141,18 +174,17 @@ export default function ProfilePage({ setPage, user, setUser }) {
           </div>
           <div style={ps.card}>
             <div style={ps.cardTitle}>Delivery Address</div>
-            <div style={ps.fieldGroup}>
+            <div style={{ ...ps.fieldGroup, marginBottom: 0 }}>
               <label style={ps.fieldLabel}>Full Address</label>
               <textarea style={ps.textarea} value={profile.address} onChange={e => setProfile(p => ({ ...p, address: e.target.value }))} placeholder="House/Flat No, Street, Landmark, City, State - PIN Code" />
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button style={ps.saveBtn} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
+            <button className="ms-btn-primary" style={ps.saveBtn} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
           </div>
         </>
       )}
 
-      {/* Security Tab */}
       {activeTab === "security" && (
         <>
           {pwMsg && <div style={ps.msg(pwMsg.type)}>{pwMsg.type === "success" ? "✓ " : "✕ "}{pwMsg.text}</div>}
@@ -164,18 +196,17 @@ export default function ProfilePage({ setPage, user, setUser }) {
             </div>
             <div style={ps.fieldGroup}>
               <label style={ps.fieldLabel}>New Password</label>
-              <input style={ps.fieldInput} type="password" value={passwords.newPassword} onChange={e => setPasswords(p => ({ ...p, newPassword: e.target.value }))} placeholder="Enter new password (min 6 chars)" />
+              <input style={ps.fieldInput} type="password" value={passwords.newPassword} onChange={e => setPasswords(p => ({ ...p, newPassword: e.target.value }))} placeholder="Enter new password (min 8 chars)" />
             </div>
             <div style={ps.fieldGroup}>
               <label style={ps.fieldLabel}>Confirm New Password</label>
               <input style={ps.fieldInput} type="password" value={passwords.confirmPassword} onChange={e => setPasswords(p => ({ ...p, confirmPassword: e.target.value }))} placeholder="Re-enter new password" />
             </div>
-            <button style={ps.saveBtn} onClick={handlePasswordChange}>Update Password</button>
+            <button className="ms-btn-primary" style={ps.saveBtn} onClick={handlePasswordChange}>Update Password</button>
           </div>
         </>
       )}
 
-      {/* Account Tab */}
       {activeTab === "account" && (
         <>
           <div style={ps.card}>
@@ -186,7 +217,7 @@ export default function ProfilePage({ setPage, user, setUser }) {
                 <div style={ps.statLabel}>Total Orders</div>
               </div>
               <div style={ps.statCard}>
-                <div style={ps.statNum}>{profile.role === "ADMIN" ? "Admin" : "User"}</div>
+                <div style={ps.statNum}>{profile.role === "ADMIN" ? "Admin" : "Patient"}</div>
                 <div style={ps.statLabel}>Account Type</div>
               </div>
               <div style={ps.statCard}>
@@ -198,8 +229,8 @@ export default function ProfilePage({ setPage, user, setUser }) {
           <div style={ps.card}>
             <div style={ps.cardTitle}>Quick Actions</div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <button style={{ ...ps.saveBtn, background: COLORS.bg, color: COLORS.text, border: `1px solid ${COLORS.border}` }} onClick={() => setPage("my-orders")}>View My Orders</button>
-              <button style={{ ...ps.saveBtn, background: COLORS.bg, color: COLORS.text, border: `1px solid ${COLORS.border}` }} onClick={() => setPage("listing")}>Browse Medicines</button>
+              <button style={{ ...ps.saveBtn, background: COLORS.inputBg, color: COLORS.text, border: `1px solid ${COLORS.borderStrong}` }} onClick={() => setPage("my-orders")}>View My Orders</button>
+              <button style={{ ...ps.saveBtn, background: COLORS.inputBg, color: COLORS.primary, border: `1px solid ${COLORS.borderStrong}` }} onClick={() => setPage("listing")}>Browse Medicines</button>
             </div>
           </div>
         </>

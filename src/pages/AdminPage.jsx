@@ -3,15 +3,15 @@ import { useState, useRef, useEffect } from "react";
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const C = {
-  sidebar: "#0F172A", sidebarHover: "#1E293B", sidebarActive: "#0D9488",
-  primary: "#0D9488", primaryDark: "#0F766E", primaryLight: "#CCFBF1",
-  bg: "#F1F5F9", white: "#FFFFFF", text: "#0F172A", textMuted: "#64748B",
-  textLight: "#94A3B8", border: "#E2E8F0", borderDark: "#CBD5E1",
-  success: "#10B981", successBg: "#ECFDF5", successText: "#065F46",
-  warning: "#F59E0B", warningBg: "#FFFBEB", warningText: "#92400E",
-  danger: "#EF4444", dangerBg: "#FEF2F2", dangerText: "#991B1B",
-  info: "#3B82F6", infoBg: "#EFF6FF", infoText: "#1E40AF",
-  purple: "#8B5CF6", purpleBg: "#F5F3FF", purpleText: "#4C1D95",
+  sidebar: "#041214", sidebarHover: "#0A2226", sidebarActive: "#14B8A6",
+  primary: "#14B8A6", primaryDark: "#0F766E", primaryLight: "rgba(46, 230, 197, 0.14)",
+  bg: "#06181A", white: "#0A2226", text: "#ECFDFB", textMuted: "#8EB2B0",
+  textLight: "#5F8583", border: "rgba(46, 230, 197, 0.16)", borderDark: "rgba(46, 230, 197, 0.28)",
+  success: "#34D399", successBg: "rgba(52, 211, 153, 0.14)", successText: "#34D399",
+  warning: "#FBBF24", warningBg: "rgba(251, 191, 36, 0.14)", warningText: "#FBBF24",
+  danger: "#FB7185", dangerBg: "rgba(251, 113, 133, 0.14)", dangerText: "#FB7185",
+  info: "#38BDF8", infoBg: "rgba(56, 189, 248, 0.14)", infoText: "#38BDF8",
+  purple: "#C084FC", purpleBg: "rgba(192, 132, 252, 0.14)", purpleText: "#C084FC",
 };
 
 const INIT_PRODUCTS = [];
@@ -214,10 +214,10 @@ function Dashboard({ products, orders }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        <KpiCard icon="💰" label="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} sub={`₹${deliveredRevenue.toLocaleString()} delivered`} bg="#ECFDF5" />
-        <KpiCard icon="📦" label="Total Orders" value={totalOrders} sub={`${deliveredOrders} delivered`} bg="#EFF6FF" subColor={C.info} />
-        <KpiCard icon="💊" label="Products" value={products.length} sub={`${products.filter(p => p.status === "active").length} active`} bg="#F5F3FF" subColor={C.purple} />
-        <KpiCard icon="⚠️" label="Low Stock Alerts" value={lowStock} sub={`${pendingOrders} orders pending`} bg="#FEF2F2" subColor={C.danger} />
+        <KpiCard icon="₹" label="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} sub={`₹${deliveredRevenue.toLocaleString()} delivered`} bg={C.successBg} />
+        <KpiCard icon="#" label="Total Orders" value={totalOrders} sub={`${deliveredOrders} delivered`} bg={C.infoBg} subColor={C.info} />
+        <KpiCard icon="+" label="Products" value={products.length} sub={`${products.filter(p => p.status === "active").length} active`} bg={C.purpleBg} subColor={C.purple} />
+        <KpiCard icon="!" label="Low Stock Alerts" value={lowStock} sub={`${pendingOrders} orders pending`} bg={C.dangerBg} subColor={C.danger} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, marginBottom: 20 }}>

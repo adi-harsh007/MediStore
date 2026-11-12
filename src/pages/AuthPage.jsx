@@ -32,14 +32,12 @@ export default function AuthPage({ setPage, setUser }) {
     setLoading(false);
   };
 
-  // OTP verification state
   const [showOTP, setShowOTP] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpMsg, setOtpMsg] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
 
-  // Resend countdown
   useEffect(() => {
     if (resendTimer <= 0) return;
     const t = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -52,7 +50,7 @@ export default function AuthPage({ setPage, setUser }) {
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
       const payload = isLogin ? { email, password } : { name, email, password };
-      
+
       const res = await fetch(`${API}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,7 +58,6 @@ export default function AuthPage({ setPage, setUser }) {
       });
       const data = await res.json();
 
-      // Signup success → show OTP screen
       if (data.needsVerification) {
         setVerifyEmail(data.email || email);
         setShowOTP(true);
@@ -70,7 +67,7 @@ export default function AuthPage({ setPage, setUser }) {
       }
 
       if (!res.ok) throw new Error(data.error || "Authentication failed");
-      
+
       const userData = { ...data.user, token: data.token, isAdmin: data.user.role === "ADMIN" };
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(userData));
@@ -93,7 +90,6 @@ export default function AuthPage({ setPage, setUser }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Verification failed");
 
-      // Success — user is logged in
       const userData = { ...data.user, token: data.token, isAdmin: data.user.role === "ADMIN" };
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(userData));
@@ -115,7 +111,7 @@ export default function AuthPage({ setPage, setUser }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to resend");
-      setOtpMsg("✓ New code sent to your email");
+      setOtpMsg("✓ New verification code sent to your email");
       setResendTimer(60);
       setOtpCode("");
     } catch (err) {
@@ -123,33 +119,32 @@ export default function AuthPage({ setPage, setUser }) {
     }
   };
 
-  // OTP Verification Screen
   if (showOTP) {
     return (
       <div style={s.authContainer}>
         <div style={s.authCard}>
-          <div style={{ textAlign: "center", marginBottom: 8 }}>
-            <div style={{ marginBottom: 16, color: COLORS.primary }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <div style={{ textAlign: "center", marginBottom: 10 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: COLORS.primaryLight, border: `1px solid ${COLORS.borderStrong}`, color: COLORS.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
             </div>
             <h1 style={s.authTitle}>Verify Your Email</h1>
-            <p style={s.authSub}>We've sent a 6-digit code to</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: COLORS.primary, margin: "4px 0 20px" }}>{verifyEmail}</p>
+            <p style={{ ...s.authSub, marginBottom: 6 }}>Enter the 6-digit verification code sent to</p>
+            <p style={{ fontSize: 14.5, fontWeight: 700, color: COLORS.primary, margin: "0 0 22px", fontFamily: "'JetBrains Mono', monospace" }}>{verifyEmail}</p>
           </div>
 
           {otpMsg && (
             <div style={{
-              fontSize: 14, marginBottom: 16, textAlign: "center", padding: "10px 12px", borderRadius: 10,
-              background: otpMsg.startsWith("✓") ? "#ECFDF5" : "#FEF2F2",
-              color: otpMsg.startsWith("✓") ? "#059669" : "#DC2626",
-              border: `1px solid ${otpMsg.startsWith("✓") ? "#A7F3D0" : "#FECACA"}`
+              fontSize: 13.5, marginBottom: 16, textAlign: "center", padding: "10px 12px", borderRadius: 10,
+              background: otpMsg.startsWith("✓") ? COLORS.successBg : COLORS.dangerBg,
+              color: otpMsg.startsWith("✓") ? COLORS.success : COLORS.danger,
+              border: `1px solid ${otpMsg.startsWith("✓") ? "rgba(52,211,153,0.3)" : "rgba(251,113,133,0.3)"}`
             }}>{otpMsg}</div>
           )}
 
           <div style={s.formGroup}>
             <label style={s.label}>Verification Code</label>
             <input
-              style={{ ...s.input, boxSizing: "border-box", textAlign: "center", fontSize: 24, letterSpacing: 8, fontWeight: 800 }}
+              style={{ ...s.input, textAlign: "center", fontSize: 24, letterSpacing: 8, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}
               type="text"
               maxLength={6}
               placeholder="000000"
@@ -160,7 +155,8 @@ export default function AuthPage({ setPage, setUser }) {
           </div>
 
           <button
-            style={{ ...s.authBtn, opacity: otpCode.length !== 6 || loading ? 0.6 : 1 }}
+            className="ms-btn-primary"
+            style={{ ...s.authBtn, opacity: otpCode.length !== 6 || loading ? 0.55 : 1 }}
             onClick={handleVerifyOTP}
             disabled={otpCode.length !== 6 || loading}
           >
@@ -169,7 +165,7 @@ export default function AuthPage({ setPage, setUser }) {
 
           <div style={{ textAlign: "center", marginTop: 20 }}>
             {resendTimer > 0 ? (
-              <span style={{ fontSize: 14, color: COLORS.textMuted }}>Resend code in <strong>{resendTimer}s</strong></span>
+              <span style={{ fontSize: 13.5, color: COLORS.textMuted }}>Resend code in <strong style={{ color: COLORS.text }}>{resendTimer}s</strong></span>
             ) : (
               <span style={s.authToggleLink} onClick={handleResend}>Resend Code</span>
             )}
@@ -187,38 +183,45 @@ export default function AuthPage({ setPage, setUser }) {
   return (
     <div style={s.authContainer}>
       <div style={s.authCard}>
-        <h1 style={s.authTitle}>{isLogin ? "Welcome Back" : "Create Account"}</h1>
-        <p style={s.authSub}>{isLogin ? "Log in to access your orders and prescriptions" : "Join MediStore for fast, reliable medicine delivery"}</p>
-        
+        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.primary, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+          Patient &amp; Dispensary Portal
+        </div>
+        <h1 style={s.authTitle}>{isLogin ? "Sign In to MediStore" : "Create Account"}</h1>
+        <p style={s.authSub}>{isLogin ? "Access your prescriptions, orders, and saved formulations" : "Register for verified medicine delivery & Rx tracking"}</p>
+
         <form onSubmit={handleSubmit}>
-          {error && <div style={{ color: COLORS.danger, fontSize: 14, marginBottom: 16, textAlign: "center", background: "#FEF2F2", padding: "10px 12px", borderRadius: 10, border: "1px solid #FECACA" }}>{error}</div>}
+          {error && (
+            <div style={{ color: COLORS.danger, fontSize: 13.5, marginBottom: 16, textAlign: "center", background: COLORS.dangerBg, padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(251,113,133,0.3)" }}>
+              {error}
+            </div>
+          )}
           {!isLogin && (
             <div style={s.formGroup}>
               <label style={s.label}>Full Name</label>
-              <input style={{ ...s.input, boxSizing: "border-box" }} type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required />
+              <input style={s.input} type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required />
             </div>
           )}
           <div style={s.formGroup}>
             <label style={s.label}>Email Address</label>
-            <input style={{ ...s.input, boxSizing: "border-box" }} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+            <input style={s.input} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
           <div style={s.formGroup}>
             <label style={s.label}>Password</label>
-            <input style={{ ...s.input, boxSizing: "border-box" }} type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
-            {!isLogin && <span style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4, display: "block" }}>Minimum 8 characters</span>}
+            <input style={s.input} type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+            {!isLogin && <span style={{ fontSize: 11.5, color: COLORS.textMuted, marginTop: 5, display: "block" }}>Minimum 8 characters</span>}
           </div>
-          <button style={{ ...s.authBtn, opacity: loading ? 0.6 : 1 }} type="submit" disabled={loading}>
-            {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
+          <button className="ms-btn-primary" style={{ ...s.authBtn, opacity: loading ? 0.6 : 1 }} type="submit" disabled={loading}>
+            {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
           </button>
         </form>
-        
-        <div style={{ marginTop: 24, marginBottom: 24, display: "flex", alignItems: "center" }}>
+
+        <div style={{ marginTop: 22, marginBottom: 22, display: "flex", alignItems: "center" }}>
           <div style={{ flex: 1, height: 1, backgroundColor: COLORS.border }}></div>
-          <div style={{ padding: "0 10px", fontSize: 13, color: COLORS.textMuted, fontWeight: 600 }}>OR</div>
+          <div style={{ padding: "0 12px", fontSize: 12, color: COLORS.textLight, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>OR</div>
           <div style={{ flex: 1, height: 1, backgroundColor: COLORS.border }}></div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}>
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
             onError={() => {
@@ -226,15 +229,15 @@ export default function AuthPage({ setPage, setUser }) {
             }}
             useOneTap
             shape="rectangular"
-            theme="outline"
+            theme="filled_black"
             text={isLogin ? "signin_with" : "signup_with"}
           />
         </div>
 
         <div style={s.authToggle}>
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
+          {isLogin ? "New to MediStore? " : "Already have an account? "}
           <span style={s.authToggleLink} onClick={() => { setIsLogin(!isLogin); setError(""); }}>
-            {isLogin ? "Sign up here" : "Log in here"}
+            {isLogin ? "Create an account" : "Sign in here"}
           </span>
         </div>
       </div>
